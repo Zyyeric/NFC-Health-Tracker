@@ -25,20 +25,22 @@ int main(void) {
   
   // Initialize the MAX30102 sensor
   max30102_init(&twi_mngr_instance);
+
+  FILE *file = fopen("output.txt", "w");  // Open file for writing (overwrite mode)
+  if (file == NULL) {
+      perror("Failed to open file");
+      return 1;
+  }
+
+  fprintf(file, "Hello, world!\n");  // Write formatted text
+  fputs("This is another line.\n", file);
+
+  fclose(file);  // Close the file
   
   while (1) {
-    uint8_t sample_count = max30102_get_sample_count();
-    printf("Sample count before reading: %d\n", sample_count);
-    
-    // if (sample_count > 0) {
-    //   for (uint8_t i = 0; i < sample_count; i++) {
     max30102_measurement_t sample = max30102_read_sample();
-    printf("Sample %d: RED = %lu, IR = %lu\n", 1, sample.red, sample.ir);
-    //   }
-    // } else {
-    //   printf("No new samples available.\n");
-    // }
-    nrf_delay_ms(50);
+    printf("%lu\n", sample.red);
+    // nrf_delay_ms(50);
   }
   
   return 0;

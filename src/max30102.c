@@ -81,14 +81,11 @@ void max30102_init(const nrf_twi_mngr_t* i2c) {
   i2c_reg_write(MAX30102_ADDRESS, FIFO_CONFIG, 0x0F);
   
   // Configure Mode settings
-  i2c_reg_write(MAX30102_ADDRESS, MODE_CONFIG, 0x03);
-  
-  // Configure SpO₂ settings
-  i2c_reg_write(MAX30102_ADDRESS, SPO2_CONFIG, 0x27);
-  
+  i2c_reg_write(MAX30102_ADDRESS, MODE_CONFIG, 0x02);
+
   // Set LED pulse amplitudes
   i2c_reg_write(MAX30102_ADDRESS, LED1_RED_PULSE_AMP, 0x24); 
-  i2c_reg_write(MAX30102_ADDRESS, LED2_IR_PULSE_AMP, 0x24); 
+  i2c_reg_write(MAX30102_ADDRESS, LED2_IR_PULSE_AMP, 0x0); 
   
   printf("MAX30102 initialization complete.\n");
 }
@@ -113,7 +110,6 @@ max30102_measurement_t max30102_read_sample(void) {
   // Since data is left-justified, need to shift right at the end
   max30102_measurement_t sample;
   sample.red = (((uint32_t)data[0] << 16) | ((uint32_t)data[1] << 8) | data[2]) >> 6;
-  sample.ir  = (((uint32_t)data[3] << 16) | ((uint32_t)data[4] << 8) | data[5]) >> 6;
   
   return sample;
 }
