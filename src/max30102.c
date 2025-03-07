@@ -52,7 +52,7 @@ void i2c_reg_write(uint8_t i2c_addr, uint8_t reg_addr, uint8_t data) {
   ret_code_t result = nrf_twi_mngr_perform(i2c_manager, NULL, write_transfer, 1, NULL);
   
   if (result != NRF_SUCCESS) {
-    // Likely error codes:
+    //  Likely error codes:
     //  NRF_ERROR_INTERNAL            (0x0003) - something is wrong with the driver itself
     //  NRF_ERROR_INVALID_ADDR        (0x0010) - buffer passed was in Flash instead of RAM
     //  NRF_ERROR_BUSY                (0x0011) - driver was busy with another transfer still
