@@ -1,7 +1,3 @@
-// I2C sensors app
-//
-// Read from I2C accelerometer/magnetometer on the Microbit
-
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -10,42 +6,40 @@
 #include "nrf_delay.h"
 #include "nrf_twi_mngr.h"
 #include "app_timer.h"
-
 #include "microbit_v2.h"
-#include "lsm303agr.h"
+#include "max30102.h"
 
-// Global variables
+// Global I2C manager instance
 NRF_TWI_MNGR_DEF(twi_mngr_instance, 1, 0);
-
-APP_TIMER_DEF(my_timer_1);
 
 int main(void) {
   printf("Board started!\n");
-
-  // Initialize I2C peripheral and driver
+  
+  // Initialize I2C and configure peripheral and driver
   nrf_drv_twi_config_t i2c_config = NRF_DRV_TWI_DEFAULT_CONFIG;
-  // WARNING!!
-  // These are NOT the correct pins for external I2C communication.
-  // If you are using QWIIC or other external I2C devices, the are
-  // connected to EDGE_P19 (a.k.a. I2C_QWIIC_SCL) and EDGE_P20 (a.k.a. I2C_QWIIC_SDA)
-  i2c_config.scl = EDGE_P19;
-  i2c_config.sda = EDGE_P20;
+  i2c_config.scl = EDGE_P19;  
+  i2c_config.sda = EDGE_P20;  
   i2c_config.frequency = NRF_TWIM_FREQ_100K;
   i2c_config.interrupt_priority = 0;
   nrf_twi_mngr_init(&twi_mngr_instance, &i2c_config);
-
-  // Initialize the LSM303AGR accelerometer/magnetometer sensor
-  lsm303agr_init(&twi_mngr_instance);
-  printf("Made it here\n");
-  //TODO: implement me!
-  // app_timer_init();
-  // app_timer_create(&my_timer_1, APP_TIMER_MODE_REPEATED, tilt_angle);
-  // app_timer_start(my_timer_1, 32768, NULL);
   
-  // Loop forever
+  // Initialize the MAX30102 sensor
+  max30102_init(&twi_mngr_instance);
+  
   while (1) {
-    // Don't put any code in here. Instead put periodic code in a callback using a timer.
-    nrf_delay_ms(1000);
-    printf("While looping\n");
+    uint8_t sample_count = max30102_get_sample_count();
+    printf("Sample count before reading: %d\n", sample_count);
+    
+    // if (sample_count > 0) {
+    //   for (uint8_t i = 0; i < sample_count; i++) {
+    max30102_measurement_t sample = max30102_read_sample();
+    printf("Sample %d: RED = %lu, IR = %lu\n", 1, sample.red, sample.ir);
+    //   }
+    // } else {
+    //   printf("No new samples available.\n");
+    // }
+    nrf_delay_ms(50);
   }
+  
+  return 0;
 }
