@@ -20,8 +20,11 @@ typedef enum {
   FIFO_CONFIG        = 0x08,
   MODE_CONFIG        = 0x09,
   SPO2_CONFIG        = 0x0A,
-  LED1_RED_PULSE_AMP     = 0x0C,  
-  LED2_IR_PULSE_AMP     = 0x0D,   
+  LED1_RED_PULSE_AMP = 0x0C,  
+  LED2_IR_PULSE_AMP  = 0x0D,  
+  TEMP_INT           = 0x1F,
+  TEMP_FRAC          = 0x20,
+  TEMP_CONFIG        = 0x21, 
   PART_ID            = 0xFF,
 } max30102_reg_t;
 
@@ -41,4 +44,6 @@ void i2c_reg_write(uint8_t i2c_addr, uint8_t reg_addr, uint8_t data);
 uint8_t max30102_get_sample_count(void);
 
 max30102_measurement_t max30102_read_sample(void);
+
+void max30102_read_temp(void);
 

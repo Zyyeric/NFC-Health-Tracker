@@ -27,18 +27,19 @@ int main(void) {
   max30102_init(&twi_mngr_instance);
   
   while (1) {
-    uint8_t sample_count = max30102_get_sample_count();
-    printf("Sample count before reading: %d\n", sample_count);
+    // uint8_t sample_count = max30102_get_sample_count();
+    // printf("Sample count before reading: %d\n", sample_count);
     
     // if (sample_count > 0) {
     //   for (uint8_t i = 0; i < sample_count; i++) {
-    max30102_measurement_t sample = max30102_read_sample();
-    printf("Sample %d: RED = %lu, IR = %lu\n", 1, sample.red, sample.ir);
+    // max30102_measurement_t sample = max30102_read_sample();
+    // printf("Sample %d: RED = %lu, IR = %lu\n", 1, sample.red, sample.ir);
+    max30102_read_temp();
     //   }
     // } else {
     //   printf("No new samples available.\n");
     // }
-    nrf_delay_ms(50);
+    nrf_delay_ms(100);
   }
   
   return 0;

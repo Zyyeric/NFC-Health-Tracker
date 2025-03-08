@@ -81,10 +81,10 @@ void max30102_init(const nrf_twi_mngr_t* i2c) {
   i2c_reg_write(MAX30102_ADDRESS, FIFO_CONFIG, 0x0F);
   
   // Configure Mode settings
-  i2c_reg_write(MAX30102_ADDRESS, MODE_CONFIG, 0x03);
+  i2c_reg_write(MAX30102_ADDRESS, MODE_CONFIG, 0x02);
   
   // Configure SpO₂ settings
-  i2c_reg_write(MAX30102_ADDRESS, SPO2_CONFIG, 0x27);
+  // i2c_reg_write(MAX30102_ADDRESS, SPO2_CONFIG, 0x27); 
   
   // Set LED pulse amplitudes
   i2c_reg_write(MAX30102_ADDRESS, LED1_RED_PULSE_AMP, 0x24); 
@@ -116,5 +116,20 @@ max30102_measurement_t max30102_read_sample(void) {
   sample.ir  = (((uint32_t)data[3] << 16) | ((uint32_t)data[4] << 8) | data[5]) >> 6;
   
   return sample;
+}
+
+void max30102_read_temp(void) {
+  i2c_reg_write(MAX30102_ADDRESS, TEMP_CONFIG, 0x01);
+
+  nrf_delay_ms(50);
+
+  int8_t temp_int;
+  i2c_reg_read(MAX30102_ADDRESS, TEMP_INT, 1, &temp_int);
+  uint8_t temp_frac;
+  i2c_reg_read(MAX30102_ADDRESS, TEMP_FRAC, 1, &temp_frac);
+
+  float temp = (float)temp_int + (float)temp_frac * 0.0625;
+
+  printf("Current Temperature: %.2f °C\n", temp);
 }
 
