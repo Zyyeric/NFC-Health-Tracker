@@ -28,7 +28,7 @@ static uint32_t peak_timestamps[MAX_PEAKS];
 static uint8_t  peak_count = 0;
 static uint32_t last_peak_time = 0;
 
-// app_timer for periodic sampling (10 ms).
+// app_timer for periodic sampling (2 ms).
 APP_TIMER_DEF(m_sample_timer);
 #define SAMPLE_INTERVAL_MS   2
 #define APP_TIMER_TICKS_MS(x) APP_TIMER_TICKS(x)
@@ -154,7 +154,9 @@ void sample_timer_callback(void * p_context)
                 heart_condition = "Tachycardia";
             }
         }
-        
+
+        // todo: Pass the bpm, filtered_sample, and condition to the display here. 
+
         NRF_LOG_INFO("Final BPM: %u, Condition: %s", final_bpm, heart_condition);
         
         // Stop the sampling timer.
