@@ -14,7 +14,7 @@
 #define MOVING_AVG_WINDOW 5    // Number of samples for moving average
 
 static float ma_buffer[MOVING_AVG_WINDOW];  // Circular buffer for moving average
-static uint8_t ma_index = 0;                // Index into the buffer
+static uint32_t ma_sample_count = 0;        // Numbers of samples processed 
 static float ma_sum = 0.0f;                 // Sum of samples in the window
 static bool ma_filled = false;              // Indicates if the window is fully populated
 
@@ -47,6 +47,8 @@ static volatile uint32_t elapsed_time_ms = 0;
 #define BRADYCARDIA_THRESHOLD  60   // BPM less than 60 indicates bradycardia
 #define TACHYCARDIA_THRESHOLD  100  // BPM greater than 100 indicates tachycardia
 
+// Encapsulate the logic for starting the sample timer. 
+// Therefore, sample timer instance can be reused across modules. 
 void start_sample_timer(void)
 {
     ret_code_t err_code;
@@ -55,10 +57,12 @@ void start_sample_timer(void)
                                 sample_timer_callback);
     APP_ERROR_CHECK(err_code);
     
-    err_code = app_timer_start(m_sample_timer, APP_TIMER_TICKS(10), NULL);
+    err_code = app_timer_start(m_sample_timer, APP_TIMER_TICKS(SAMPLE_INTERVAL_MS), NULL);
     APP_ERROR_CHECK(err_code);
 }
 
+// Encapsulate the logic for ending the sample timer. 
+// Therefore, sample timer instance can be reused across modules. 
 void stop_sample_timer(void)
 {
     ret_code_t err_code;
@@ -91,22 +95,22 @@ void sample_timer_callback(void * p_context)
     float raw_sample = adc_sample_blocking();  // Returns raw ADC counts (0-4095)
 
     // Apply a moving-average filter.
-    if (ma_index < MOVING_AVG_WINDOW)
+    uint8_t index = (uint8_t)(ma_sample_count % MOVING_AVG_WINDOW);
+    if (ma_sample_count < MOVING_AVG_WINDOW)
     {
         ma_sum += raw_sample;
-        ma_buffer[ma_index] = raw_sample;
-        ma_index++;
-        if (ma_index == MOVING_AVG_WINDOW)
+        ma_buffer[index] = raw_sample;
+        ma_sample_count++;
+        if (ma_sample_count >= MOVING_AVG_WINDOW)
         {
             ma_filled = true;
         }
     }
     else
     {
-        uint8_t idx = ma_index % MOVING_AVG_WINDOW;
-        ma_sum = ma_sum - ma_buffer[idx] + raw_sample;
-        ma_buffer[idx] = raw_sample;
-        ma_index++;
+        ma_sum = ma_sum - ma_buffer[index] + raw_sample;
+        ma_buffer[index] = raw_sample;
+        ma_sample_count++;
     }
     float filtered_sample = (ma_filled) ? (ma_sum / MOVING_AVG_WINDOW) : raw_sample;
     
@@ -117,8 +121,13 @@ void sample_timer_callback(void * p_context)
     // During the stabilization period, simply continue filtering.
     if (elapsed_time_ms < STABILIZATION_TIME_MS)
     {
-        NRF_LOG_INFO("Stabilizing sensor... (%d ms)", elapsed_time_ms);
-        // todo: tell the display that we are still stabilizing. 
+        static uint32_t last_stab_log = 0;
+        if ((elapsed_time_ms - last_stab_log) >= 500) // log every 500 ms during stabilization
+        {
+            last_stab_log = elapsed_time_ms;
+            NRF_LOG_INFO("Stabilizing sensor... (%d ms)", elapsed_time_ms);
+            // todo: tell the display that we are still stabilizing.
+        }
         return;
     }
     
