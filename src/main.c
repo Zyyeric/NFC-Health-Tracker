@@ -9,6 +9,7 @@
 #include "microbit_v2.h"
 #include "max30102.h"
 #include "pulsesensor.h"
+#include "pulsesensor_util.h"
 #include "display.h"
 #include "nrfx_spim.h"
 
@@ -29,6 +30,14 @@ int main(void) {
   i2c_config.frequency = NRF_TWIM_FREQ_100K;
   i2c_config.interrupt_priority = 0;
   nrf_twi_mngr_init(&twi_mngr_instance, &i2c_config);
+  printf("I2C initialized!\n");
+  
+  ret_code_t err_code = app_timer_init();
+  APP_ERROR_CHECK(err_code);
+  
+  start_sample_timer();
+
+  printf("Timer initialized! lalalalalalalalalal\n");
   
   // Initialize the MAX30102 sensor
   max30102_init(&twi_mngr_instance);

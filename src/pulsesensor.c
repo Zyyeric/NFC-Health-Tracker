@@ -23,9 +23,9 @@ void adc_init(void) {
   ret_code_t error_code = nrfx_saadc_init(&saadc_config, saadc_event_callback);
   APP_ERROR_CHECK(error_code);
 
-  // Initialize temperature sensor channel
-  nrf_saadc_channel_config_t temp_channel_config = NRFX_SAADC_DEFAULT_CHANNEL_CONFIG_SE(PULSE_INPUT);
-  error_code = nrfx_saadc_channel_init(ADC_PULSE, &temp_channel_config);
+  // Initialize pulse sensor channel
+  nrf_saadc_channel_config_t pulse_channel_config = NRFX_SAADC_DEFAULT_CHANNEL_CONFIG_SE(PULSE_INPUT);
+  error_code = nrfx_saadc_channel_init(ADC_PULSE, &pulse_channel_config);
   APP_ERROR_CHECK(error_code);
 }
 
@@ -35,11 +35,10 @@ float adc_sample_blocking(void) {
   ret_code_t error_code = nrfx_saadc_sample_convert(ADC_PULSE, &adc_counts);
   APP_ERROR_CHECK(error_code);
 
-  // convert ADC counts to heart rate
-  // 12-bit ADC with range from 0 to 3.6 Volts
-  float volt = ((float) adc_counts/4095) * 3.6;
+  // 12-bit ADC with range from 0 to 3.6 Volts ()
+  // float volt = ((float) adc_counts/4095) * 3.6;
   
-  // return voltage measurement
+  // return adc measurement (I think we are just playing with adc at this point???)
   return adc_counts;
 }
 
