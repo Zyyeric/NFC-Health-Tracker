@@ -8,6 +8,13 @@
 #include "app_timer.h"
 #include "microbit_v2.h"
 #include "max30102.h"
+#include "pulsesensor.h"
+#include "display.h"
+#include "nrfx_spim.h"
+
+#include <stdio.h>
+#include <math.h>
+#include <string.h>
 
 // Global I2C manager instance
 NRF_TWI_MNGR_DEF(twi_mngr_instance, 1, 0);
@@ -25,21 +32,16 @@ int main(void) {
   
   // Initialize the MAX30102 sensor
   max30102_init(&twi_mngr_instance);
-  
+  // Initialize the ADC
+  adc_init();
+  // Initialize the SPI
+  spi_init();
+
   while (1) {
-    // uint8_t sample_count = max30102_get_sample_count();
-    // printf("Sample count before reading: %d\n", sample_count);
-    
-    // if (sample_count > 0) {
-    //   for (uint8_t i = 0; i < sample_count; i++) {
-    // max30102_measurement_t sample = max30102_read_sample();
-    // printf("Sample %d: RED = %lu, IR = %lu\n", 1, sample.red, sample.ir);
-    max30102_read_temp();
-    //   }
-    // } else {
-    //   printf("No new samples available.\n");
-    // }
-    nrf_delay_ms(100);
+    printf("While Looping\n");
+    float val = adc_sample_blocking();
+    printf("%f\n", val);
+    nrf_delay_ms(50);
   }
   
   return 0;
