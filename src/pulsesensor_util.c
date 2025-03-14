@@ -163,7 +163,6 @@ void sample_timer_callback(void * p_context)
         NRF_LOG_INFO("Final BPM: %u", final_bpm);
         
         // Stop the sampling timer.
-        ret_code_t err_code = app_timer_stop(m_sample_timer);
-        APP_ERROR_CHECK(err_code);
+        stop_sample_timer();
     }
 }
