@@ -12,6 +12,9 @@
 #include "pulsesensor_util.h"
 #include "display.h"
 #include "nrfx_spim.h"
+#include "nrf_log.h"
+#include "nrf_log_ctrl.h"
+#include "nrf_log_default_backends.h"
 
 #include <stdio.h>
 #include <math.h>

@@ -18,6 +18,9 @@ static uint8_t ma_index = 0;                // Index into the buffer
 static float ma_sum = 0.0f;                 // Sum of samples in the window
 static bool ma_filled = false;              // Indicates if the window is fully populated
 
+#define DISPLAY_UPDATE_INTERVAL_MS 3000  // Update display every 3 seconds
+static uint32_t last_display_update = 0;
+
 // Detect peaks when the filtered signal crosses above a set threshold (rising edge),
 // enforcing a minimum interval between peaks to avoid false triggers.
 #define PEAK_THRESHOLD        2300.0f   // Adjust based on sensor and environment (e.g., ambient light) 
@@ -115,6 +118,7 @@ void sample_timer_callback(void * p_context)
     if (elapsed_time_ms < STABILIZATION_TIME_MS)
     {
         NRF_LOG_INFO("Stabilizing sensor... (%d ms)", elapsed_time_ms);
+        // todo: tell the display that we are still stabilizing. 
         return;
     }
     
@@ -135,29 +139,28 @@ void sample_timer_callback(void * p_context)
         }
     }
     was_above_threshold = is_above_threshold;
+
+    // Update display at fix intervals.
+    if ((elapsed_time_ms - last_display_update) >= DISPLAY_UPDATE_INTERVAL_MS)
+    {
+        last_display_update = elapsed_time_ms;
+        uint32_t current_bpm = calculate_bpm();
+
+        // todo: Here we shall pass the current BPM and filtered sample to the display.
+        // In addition, we pass a flag (final = 0) to indicate that sampling is still ongoing.
+        // Something like -> update_display(current_bpm, filtered_sample, 0);
+        NRF_LOG_INFO("Current BPM: %u", current_bpm);
+    }
     
-    // When the measurement window is complete, calculate BPM and perform arrhythmia checks.
+    // When the measurement window is complete, send a final update.
     if (elapsed_time_ms >= MEASUREMENT_WINDOW_MS)
     {
         uint32_t final_bpm = calculate_bpm();
-        
-        // Simple arrhythmia detection based on BPM.
-        const char *heart_condition = "Normal";
-        if (final_bpm > 0)
-        {
-            if (final_bpm < BRADYCARDIA_THRESHOLD)
-            {
-                heart_condition = "Bradycardia";
-            }
-            else if (final_bpm > TACHYCARDIA_THRESHOLD)
-            {
-                heart_condition = "Tachycardia";
-            }
-        }
 
-        // todo: Pass the bpm, filtered_sample, and condition to the display here. 
-
-        NRF_LOG_INFO("Final BPM: %u, Condition: %s", final_bpm, heart_condition);
+        // todo: Pass the final BPM and the latest filtered sample.
+        // The display module will compute the average BPM over the window and determine the health condition.
+        // ->>>>>> update_display(final_bpm, filtered_sample, 1);
+        NRF_LOG_INFO("Final BPM: %u", final_bpm);
         
         // Stop the sampling timer.
         ret_code_t err_code = app_timer_stop(m_sample_timer);
