@@ -6,12 +6,12 @@
 #include <stdio.h>
 #include "app_timer.h"
 #include "nrf_delay.h"
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
 
 // Use a simple moving-average filter to smooth the PPG signal.
 #define MOVING_AVG_WINDOW 5    // Number of samples for moving average
+
+// Use a sliding window to detect peaks in the filtered signal.
+#define SLIDING_WINDOW_SIZE 5
 
 static float ma_buffer[MOVING_AVG_WINDOW];  // Circular buffer for moving average
 static uint32_t ma_sample_count = 0;        // Numbers of samples processed 
@@ -27,7 +27,7 @@ static uint32_t last_display_update = 0;
 #define MIN_PEAK_INTERVAL_MS  300       // Minimum interval (ms) between peaks (todo: this needs to be adjusted later)
  
 #define MAX_PEAKS  10
-static uint32_t peak_timestamps[MAX_PEAKS];
+static uint32_t peak_timestamps[SLIDING_WINDOW_SIZE];
 static uint8_t  peak_count = 0;
 static uint32_t last_peak_time = 0;
 
@@ -125,7 +125,7 @@ void sample_timer_callback(void * p_context)
         if ((elapsed_time_ms - last_stab_log) >= 500) // log every 500 ms during stabilization
         {
             last_stab_log = elapsed_time_ms;
-            NRF_LOG_INFO("Stabilizing sensor... (%d ms)", elapsed_time_ms);
+            printf("Stabilizing sensor... (%ld ms)\n", elapsed_time_ms);
             // todo: tell the display that we are still stabilizing.
         }
         return;
@@ -141,9 +141,17 @@ void sample_timer_callback(void * p_context)
         if ((elapsed_time_ms - last_peak_time) >= MIN_PEAK_INTERVAL_MS)
         {
             last_peak_time = elapsed_time_ms;
-            if (peak_count < MAX_PEAKS)
+            if (peak_count < SLIDING_WINDOW_SIZE)
             {
                 peak_timestamps[peak_count++] = elapsed_time_ms;
+            }
+            else
+            {
+                for (uint8_t i = 0; i < SLIDING_WINDOW_SIZE - 1; i++)
+                {
+                    peak_timestamps[i] = peak_timestamps[i + 1];
+                }
+                peak_timestamps[SLIDING_WINDOW_SIZE - 1] = elapsed_time_ms;
             }
         }
     }
@@ -155,10 +163,15 @@ void sample_timer_callback(void * p_context)
         last_display_update = elapsed_time_ms;
         uint32_t current_bpm = calculate_bpm();
 
-        // todo: Here we shall pass the current BPM and filtered sample to the display.
-        // In addition, we pass a flag (final = 0) to indicate that sampling is still ongoing.
-        // Something like -> update_display(current_bpm, filtered_sample, 0);
-        NRF_LOG_INFO("Current BPM: %u", current_bpm);
+        if (current_bpm == 0){
+            printf("Not enough peaks to calculate BPM\n");
+        }
+        else {
+            // todo: Here we shall pass the current BPM and filtered sample to the display.
+            // In addition, we pass a flag (final = 0) to indicate that sampling is still ongoing.
+            // Something like -> update_display(current_bpm, filtered_sample, 0);
+            printf("Current BPM: %lu\n", current_bpm);
+        }
     }
     
     // When the measurement window is complete, send a final update.
@@ -169,7 +182,7 @@ void sample_timer_callback(void * p_context)
         // todo: Pass the final BPM and the latest filtered sample.
         // The display module will compute the average BPM over the window and determine the health condition.
         // ->>>>>> update_display(final_bpm, filtered_sample, 1);
-        NRF_LOG_INFO("Final BPM: %u", final_bpm);
+        printf("Last BPM Sample: %lu\n", final_bpm);
         
         // Stop the sampling timer.
         stop_sample_timer();

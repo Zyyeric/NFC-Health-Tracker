@@ -12,9 +12,6 @@
 #include "pulsesensor_util.h"
 #include "display.h"
 #include "nrfx_spim.h"
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
 
 #include <stdio.h>
 #include <math.h>
@@ -24,10 +21,6 @@
 NRF_TWI_MNGR_DEF(twi_mngr_instance, 1, 0);
 
 int main(void) {
-  // Initialize logging
-  NRF_LOG_INIT(NULL);
-  NRF_LOG_DEFAULT_BACKENDS_INIT();
-  
   printf("Board started!\n");
   
   // Initialize I2C and configure peripheral and driver
@@ -47,7 +40,6 @@ int main(void) {
   printf("Pulse Sensor initialized!\n");
   // Initialize the SPI
   spi_init();
-  display_init();
   printf("Display initialized!\n");
 
   // Initalize Timer Module. 
@@ -59,7 +51,6 @@ int main(void) {
   start_sample_timer();
 
   while (1) {
-    NRF_LOG_FLUSH();
     __WFE();  // Wait for event (low-power sleep)
 }
   
