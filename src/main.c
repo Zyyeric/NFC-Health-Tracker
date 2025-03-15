@@ -40,7 +40,6 @@ int main(void) {
   printf("Pulse Sensor initialized!\n");
   // Initialize the SPI
   spi_init();
-  display_init();
   printf("Display initialized!\n");
 
   // Initalize Timer Module. 
@@ -52,7 +51,6 @@ int main(void) {
   start_sample_timer();
 
   while (1) {
-    // NRF_LOG_FLUSH();
     __WFE();  // Wait for event (low-power sleep)
 }
   

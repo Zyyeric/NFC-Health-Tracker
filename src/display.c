@@ -43,7 +43,7 @@ void spi_init(void) {
   } else if (err == NRFX_ERROR_INVALID_STATE) {
       printf("SPI Init Failed: INVALID STATE\n");
   } else {
-      printf("SPI Init Failed: Unknown Error %d\n", err);
+      printf("SPI Init Failed: Unknown Error %ld\n", err);
   }
 }
 
