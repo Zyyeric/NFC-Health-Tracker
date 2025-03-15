@@ -47,6 +47,7 @@ int main(void) {
   printf("Pulse Sensor initialized!\n");
   // Initialize the SPI
   spi_init();
+  display_init();
   printf("Display initialized!\n");
 
   // Initalize Timer Module. 

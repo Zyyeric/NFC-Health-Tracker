@@ -3,6 +3,7 @@
         "stdbool.h": "c",
         "__locale": "c",
         "pulsesensor.h": "c",
-        "nrf_delay.h": "c"
+        "nrf_delay.h": "c",
+        "nrf_error.h": "c"
     }
 }
