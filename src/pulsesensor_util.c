@@ -125,7 +125,7 @@ void sample_timer_callback(void * p_context)
         if ((elapsed_time_ms - last_stab_log) >= 500) // log every 500 ms during stabilization
         {
             last_stab_log = elapsed_time_ms;
-            NRF_LOG_INFO("Stabilizing sensor... (%d ms)", elapsed_time_ms);
+            printf("Stabilizing sensor... (%d ms)\n", elapsed_time_ms);
             // todo: tell the display that we are still stabilizing.
         }
         return;
@@ -158,7 +158,7 @@ void sample_timer_callback(void * p_context)
         // todo: Here we shall pass the current BPM and filtered sample to the display.
         // In addition, we pass a flag (final = 0) to indicate that sampling is still ongoing.
         // Something like -> update_display(current_bpm, filtered_sample, 0);
-        NRF_LOG_INFO("Current BPM: %u", current_bpm);
+        printf("Current BPM: %u\n", current_bpm);
     }
     
     // When the measurement window is complete, send a final update.
@@ -169,8 +169,7 @@ void sample_timer_callback(void * p_context)
         // todo: Pass the final BPM and the latest filtered sample.
         // The display module will compute the average BPM over the window and determine the health condition.
         // ->>>>>> update_display(final_bpm, filtered_sample, 1);
-        NRF_LOG_INFO("Final BPM: %u", final_bpm);
-        
+        printf("Final BPM: %u\n", final_bpm);        
         // Stop the sampling timer.
         stop_sample_timer();
     }
