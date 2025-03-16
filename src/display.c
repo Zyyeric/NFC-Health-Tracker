@@ -61,22 +61,41 @@ void display_init(void) {
 
   nrf_gpio_pin_clear(EDGE_P8);  // RESET LOW
   nrf_delay_ms(50);
-  nrf_gpio_pin_set(EDGE_P8);  // RESET HIGH
+  nrf_gpio_pin_set(EDGE_P8);    // RESET HIGH
   nrf_delay_ms(100);
 
-  // Send Initialization Commands
-  spi_write_command(0x11);  // Sleep OUT
-  nrf_delay_ms(120);
-  spi_write_command(0x36);  // Memory Access Control
-  uint8_t madctl = 0x48;    // Set RGB Mode
-  spi_write_data(&madctl, 1);
-  spi_write_command(0x3A);  // Pixel Format
-  uint8_t pixfmt = 0x55;    // 16-bit RGB565
-  spi_write_data(&pixfmt, 1);
-  spi_write_command(0x29);  // Display ON
+  // Official Adafruit-style initialization
+  spi_write_command(0xEF);  uint8_t ef[] = {0x03, 0x80, 0x02};  spi_write_data(ef, 3);
+  spi_write_command(0xCF);  uint8_t cf[] = {0x00, 0xC1, 0x30};  spi_write_data(cf, 3);
+  spi_write_command(0xED);  uint8_t ed[] = {0x64, 0x03, 0x12, 0x81}; spi_write_data(ed, 4);
+  spi_write_command(0xE8);  uint8_t e8[] = {0x85, 0x00, 0x78}; spi_write_data(e8, 3);
+  spi_write_command(0xCB);  uint8_t cb[] = {0x39, 0x2C, 0x00, 0x34, 0x02}; spi_write_data(cb, 5);
+  spi_write_command(0xF7);  uint8_t f7[] = {0x20}; spi_write_data(f7, 1);
+  spi_write_command(0xEA);  uint8_t ea[] = {0x00, 0x00}; spi_write_data(ea, 2);
+  
+  spi_write_command(0xC0);  uint8_t c0[] = {0x23}; spi_write_data(c0, 1);  // Power Control 1
+  spi_write_command(0xC1);  uint8_t c1[] = {0x10}; spi_write_data(c1, 1);  // Power Control 2
+  spi_write_command(0xC5);  uint8_t c5[] = {0x3E, 0x28}; spi_write_data(c5, 2);  // VCOM Control 1
+  spi_write_command(0xC7);  uint8_t c7[] = {0x86}; spi_write_data(c7, 1);  // VCOM Control 2
 
+  spi_write_command(0x36);  uint8_t madctl[] = {0x00}; spi_write_data(madctl, 1); // Memory Access Control
+  spi_write_command(0x3A);  uint8_t pixfmt[] = {0x55}; spi_write_data(pixfmt, 1); // Pixel Format = 16-bit RGB565
+
+  spi_write_command(0xB1);  uint8_t frmctr1[] = {0x00, 0x18}; spi_write_data(frmctr1, 2);
+  spi_write_command(0xB6);  uint8_t dfunctr[] = {0x08, 0x82, 0x27}; spi_write_data(dfunctr, 3);
+  
+  spi_write_command(0xF2);  uint8_t f2[] = {0x00}; spi_write_data(f2, 1);  // Disable Gamma correction
+  spi_write_command(0x26);  uint8_t gamma[] = {0x01}; spi_write_data(gamma, 1);  // Gamma curve
+
+  spi_write_command(0xE0);  uint8_t gmctrp1[] = {0x0F, 0x31, 0x2B, 0x0C, 0x0E, 0x08, 0x4E, 0xF1, 0x37, 0x07, 0x10, 0x03, 0x0E, 0x09, 0x00}; spi_write_data(gmctrp1, 15);
+  spi_write_command(0xE1);  uint8_t gmctrn1[] = {0x00, 0x0E, 0x14, 0x03, 0x11, 0x07, 0x31, 0xC1, 0x48, 0x08, 0x0F, 0x0C, 0x31, 0x36, 0x0F}; spi_write_data(gmctrn1, 15);
+
+  spi_write_command(0x11);  // Exit Sleep Mode
+  nrf_delay_ms(120);
+  spi_write_command(0x29);  // Display ON
   printf("Display Initialized!\n");
 }
+
 
 void spi_write_command(uint8_t cmd) {
   uint8_t tx_data = cmd;
@@ -97,7 +116,7 @@ void spi_write_data(uint8_t *data, size_t length) {
   nrf_gpio_pin_clear(EDGE_P16);  // Select LCD (CS LOW)
   nrf_gpio_pin_set(EDGE_P12);    // Data Mode (D/C HIGH)
 
-  nrfx_spim_xfer_desc_t xfer = NRFX_SPIM_XFER_TX(&data, 1);
+  nrfx_spim_xfer_desc_t xfer = NRFX_SPIM_XFER_TX(&data, length);
   nrfx_err_t err = nrfx_spim_xfer(&spi, &xfer, 0);  
   if (err != NRFX_SUCCESS) {
       printf("SPI Data Failed: %lu\n", err);
@@ -106,39 +125,31 @@ void spi_write_data(uint8_t *data, size_t length) {
   nrf_gpio_pin_set(EDGE_P16);  // Deselect LCD (CS HIGH)
 }
 
-void set_cursor(uint16_t x, uint16_t y) {
+void setAddrWindow(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
   uint8_t data[4];
 
-  // Set Column Address (X)
-  spi_write_command(0x2A);
-  data[0] = x >> 8; data[1] = x & 0xFF;
-  data[2] = (x + 7) >> 8; data[3] = (x + 7) & 0xFF; // 8px width
+  spi_write_command(0x2A); // Column Address Set
+  data[0] = x1 >> 8; data[1] = x1 & 0xFF;
+  data[2] = x2 >> 8; data[3] = x2 & 0xFF;
   spi_write_data(data, 4);
 
-  // Set Row Address (Y)
-  spi_write_command(0x2B);
-  data[0] = y >> 8; data[1] = y & 0xFF;
-  data[2] = (y + 7) >> 8; data[3] = (y + 7) & 0xFF; // 8px height
+  spi_write_command(0x2B); // Page Address Set
+  data[0] = y1 >> 8; data[1] = y1 & 0xFF;
+  data[2] = y2 >> 8; data[3] = y2 & 0xFF;
   spi_write_data(data, 4);
 
-  // Prepare for pixel data
-  spi_write_command(0x2C);
+  spi_write_command(0x2C); // Memory Write
 }
 
-void draw_T(uint16_t x, uint16_t y) {
-  set_cursor(x, y);  // Set Position
 
-  uint8_t data[2];  // 16-bit Color
-  for (uint8_t row = 0; row < 8; row++) {
-      for (uint8_t col = 0; col < 8; col++) {
-          // Check if pixel is ON (1) or OFF (0)
-          if (letter_T[row] & (1 << (7 - col))) {
-              data[0] = 0x00; data[1] = 0x00;  // BLACK (T)
-          } else {
-              data[0] = 0xFF; data[1] = 0xFF;  // WHITE (Background)
-          }
-          spi_write_data(data, 2); // Send pixel
-      }
+void fill_screen(uint16_t color) {
+  setAddrWindow(0, 0, 239, 319); // Full screen (assuming 240x320 display)
+  
+  uint8_t data[2] = {color >> 8, color & 0xFF}; // Convert 16-bit color
+
+  printf("Filling screen with color: 0x%04X\n", color);
+
+  for (uint16_t i = 0; i < 240 * 320; i++) { // Total pixels
+      spi_write_data(data, 2);  // Send color
   }
 }
-
