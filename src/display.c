@@ -11,17 +11,6 @@
 
 static const nrfx_spim_t spi = NRFX_SPIM_INSTANCE(2);
 
-static const uint8_t letter_T[8] = {
-  0xFF,  
-  0x18,     
-  0x18,     
-  0x18,     
-  0x18,     
-  0x18,     
-  0x18,     
-  0x00               
-};
-
 void spi_init(void) {
   nrfx_spim_config_t config = {
     .sck_pin      = EDGE_P13,  // SCK for SPI2
@@ -156,56 +145,38 @@ void fill_screen(uint16_t color) {
   printf("Done filling screen\n");
 }
 
-void write_text(char c) {
+void write_text(char c, uint16_t color, uint16_t background_color, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
+  // Get the ASCII and bit-map index of the char
   int ascii = c;
   int index = ascii - 32;
-
-  printf("ASCII: %d\n", ascii);
-  printf("Index: %d\n", index);
-
-  setAddrWindow(0, 0, 23, 38); // Full screen (assuming 240x320 display)
+  // Set the address window
+  setAddrWindow(x1, y1, x2, y2);
   
-  uint8_t data[2] = {0xFF, 0xFF};
+  uint8_t data[2] = {color >> 8, color & 0xFF};
+  uint8_t background[2] = {background_color >> 8, background_color & 0xFF};
 
-  uint8_t background[2] = {0x00, 0x00};
-
-  // for(int i = 0; i < 13 * 8; i++){
-  //   if(i < 8){
-  //     spi_write_data(data, 2);
-  //   }
-  //   else{
-  //     spi_write_data(background, 2);
-  //   }
-  // }
-
-  // for(int i = 0; i < 26; i++){
-  //   for(int j = 0; j < 16; j++){
-  //     spi_write_data(background, 2);
-  //   }
-  // }
-
-  for(int i = 0; i < 39; i++){
-    uint8_t curr = display_font[index][i/3];
-    // printf("%d\n", curr);
-    uint8_t mask = 0x80;
-    for(int j = 0; j < 8; j++){
-      if((curr & mask) == mask){
+  uint8_t mask = 0x80;
+  for(int i = 0; i < 24; i++){
+    for(int j = 0; j < 13; j++){
+      // Get the current row
+      uint8_t curr = display_font[index][12 - j];
+      if((curr & mask) == mask){  
+        // 3 times since 3x original
         spi_write_data(data, 2);
         spi_write_data(data, 2);
         spi_write_data(data, 2);
-        // printf("Writing white\n");
       }
       else{
+        // 3 times since 3x original
         spi_write_data(background, 2);
         spi_write_data(background, 2);
         spi_write_data(background, 2);
       }
+    }
 
-      // curr = curr << 1;
-      // printf("%d\n", curr);
+    // Adjust mask
+    if((i + 1) % 3 == 0){
       mask = mask >> 1;
     }
   }
-
-  printf("Done writing char");
 }

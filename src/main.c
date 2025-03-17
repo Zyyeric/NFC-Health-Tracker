@@ -26,10 +26,19 @@ int main(void) {
   // Initialize the SPI
   spi_init();
   display_init();
-  fill_screen(0xF8F8);
 
-  write_text('B');
-  // write_text('b');
+  // Different Colors
+  uint16_t white = 0xFFFF;
+  uint16_t black = 0x0000;
+  // Fill the screen black
+  fill_screen(black);
+  // Write Text
+  write_text('B', white, black, 0, 0, 38, 23);
+  write_text('P', white, black, 0, 25, 38, 48);
+  write_text('M', white, black, 0, 50, 38, 73);
+  write_text(':', white, black, 0, 75, 38, 98);
+  write_text('6', white, black, 0, 100, 38, 123);
+  write_text('5', white, black, 0, 125, 38, 148);
   
   // Initialize I2C and configure peripheral and driver
   // nrf_drv_twi_config_t i2c_config = NRF_DRV_TWI_DEFAULT_CONFIG;
@@ -46,8 +55,6 @@ int main(void) {
   // Initialize the ADC
   // adc_init();
   // printf("Pulse Sensor initialized!\n");
-
-  // draw_T(1,1);
 
   // Initalize Timer Module. 
   // ret_code_t err_code = app_timer_init();
