@@ -25,8 +25,11 @@ int main(void) {
 
   // Initialize the SPI
   spi_init();
-  printf("Display initialized!\n");
-  fill_screen(0xFFFF);
+  display_init();
+  fill_screen(0xF8F8);
+
+  write_text('B');
+  // write_text('b');
   
   // Initialize I2C and configure peripheral and driver
   // nrf_drv_twi_config_t i2c_config = NRF_DRV_TWI_DEFAULT_CONFIG;

@@ -1,4 +1,5 @@
 #include "display.h"
+#include "display_font.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -28,7 +29,7 @@ void spi_init(void) {
     .miso_pin     = NRFX_SPIM_PIN_NOT_USED,  // ILI9341 does NOT need MISO
     .ss_pin       = EDGE_P16,  // Chip Select (CS)
     .orc          = 0xFF,      // Over-run character
-    .frequency    = NRF_SPIM_FREQ_1M,  // 4MHz SPI Clock for stability
+    .frequency    = NRF_SPIM_FREQ_8M,  // 4MHz SPI Clock for stability
     .mode         = NRF_SPIM_MODE_0,  // CPOL=0, CPHA=0
     .bit_order    = NRF_SPIM_BIT_ORDER_MSB_FIRST,
   };
@@ -54,13 +55,14 @@ void gpio_init(void) {
 
   nrf_gpio_pin_set(EDGE_P16);  // CS HIGH (inactive)
   nrf_gpio_pin_set(EDGE_P12);  // D/C HIGH (data mode)
+  nrf_gpio_pin_set(EDGE_P8);   // RESET HIGH
 }
 
 void display_init(void) {
   gpio_init();
 
   nrf_gpio_pin_clear(EDGE_P8);  // RESET LOW
-  nrf_delay_ms(50);
+  nrf_delay_ms(100);
   nrf_gpio_pin_set(EDGE_P8);    // RESET HIGH
   nrf_delay_ms(100);
 
@@ -96,7 +98,6 @@ void display_init(void) {
   printf("Display Initialized!\n");
 }
 
-
 void spi_write_command(uint8_t cmd) {
   uint8_t tx_data = cmd;
   
@@ -116,7 +117,7 @@ void spi_write_data(uint8_t *data, size_t length) {
   nrf_gpio_pin_clear(EDGE_P16);  // Select LCD (CS LOW)
   nrf_gpio_pin_set(EDGE_P12);    // Data Mode (D/C HIGH)
 
-  nrfx_spim_xfer_desc_t xfer = NRFX_SPIM_XFER_TX(&data, length);
+  nrfx_spim_xfer_desc_t xfer = NRFX_SPIM_XFER_TX(data, length);
   nrfx_err_t err = nrfx_spim_xfer(&spi, &xfer, 0);  
   if (err != NRFX_SUCCESS) {
       printf("SPI Data Failed: %lu\n", err);
@@ -141,15 +142,70 @@ void setAddrWindow(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
   spi_write_command(0x2C); // Memory Write
 }
 
-
 void fill_screen(uint16_t color) {
   setAddrWindow(0, 0, 239, 319); // Full screen (assuming 240x320 display)
   
-  uint8_t data[2] = {color >> 8, color & 0xFF}; // Convert 16-bit color
+  uint8_t data[2] = {color >> 8, color & 0xFF};
 
   printf("Filling screen with color: 0x%04X\n", color);
 
-  for (uint16_t i = 0; i < 240 * 320; i++) { // Total pixels
+  for (uint32_t i = 0; i < 240 * 320; i++) { // Total pixels
       spi_write_data(data, 2);  // Send color
   }
+
+  printf("Done filling screen\n");
+}
+
+void write_text(char c) {
+  int ascii = c;
+  int index = ascii - 32;
+
+  printf("ASCII: %d\n", ascii);
+  printf("Index: %d\n", index);
+
+  setAddrWindow(0, 0, 23, 38); // Full screen (assuming 240x320 display)
+  
+  uint8_t data[2] = {0xFF, 0xFF};
+
+  uint8_t background[2] = {0x00, 0x00};
+
+  // for(int i = 0; i < 13 * 8; i++){
+  //   if(i < 8){
+  //     spi_write_data(data, 2);
+  //   }
+  //   else{
+  //     spi_write_data(background, 2);
+  //   }
+  // }
+
+  // for(int i = 0; i < 26; i++){
+  //   for(int j = 0; j < 16; j++){
+  //     spi_write_data(background, 2);
+  //   }
+  // }
+
+  for(int i = 0; i < 39; i++){
+    uint8_t curr = display_font[index][i/3];
+    // printf("%d\n", curr);
+    uint8_t mask = 0x80;
+    for(int j = 0; j < 8; j++){
+      if((curr & mask) == mask){
+        spi_write_data(data, 2);
+        spi_write_data(data, 2);
+        spi_write_data(data, 2);
+        // printf("Writing white\n");
+      }
+      else{
+        spi_write_data(background, 2);
+        spi_write_data(background, 2);
+        spi_write_data(background, 2);
+      }
+
+      // curr = curr << 1;
+      // printf("%d\n", curr);
+      mask = mask >> 1;
+    }
+  }
+
+  printf("Done writing char");
 }
