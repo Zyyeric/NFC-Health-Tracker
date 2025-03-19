@@ -14,13 +14,13 @@ static const nrfx_spim_t spi = NRFX_SPIM_INSTANCE(2);
 
 void spi_init(void) {
   nrfx_spim_config_t config = {
-    .sck_pin      = EDGE_P13,  // SCK for SPI2
-    .mosi_pin     = EDGE_P15,  // MOSI for SPI2
-    .miso_pin     = NRFX_SPIM_PIN_NOT_USED,  // ILI9341 does NOT need MISO
-    .ss_pin       = EDGE_P16,  // Chip Select (CS)
-    .orc          = 0xFF,      // Over-run character
-    .frequency    = NRF_SPIM_FREQ_8M,  // 4MHz SPI Clock for stability
-    .mode         = NRF_SPIM_MODE_0,  // CPOL=0, CPHA=0
+    .sck_pin      = EDGE_P13,  
+    .mosi_pin     = EDGE_P15,  
+    .miso_pin     = NRFX_SPIM_PIN_NOT_USED,  
+    .ss_pin       = EDGE_P16, 
+    .orc          = 0xFF,      
+    .frequency    = NRF_SPIM_FREQ_8M,  
+    .mode         = NRF_SPIM_MODE_0,  
     .bit_order    = NRF_SPIM_BIT_ORDER_MSB_FIRST,
   };
 
@@ -43,8 +43,8 @@ void gpio_init(void) {
   nrf_gpio_cfg_output(EDGE_P8);   // RESET Pin
   nrf_gpio_cfg_output(EDGE_P16);  // CS Pin
 
-  nrf_gpio_pin_set(EDGE_P16);  // CS HIGH (inactive)
-  nrf_gpio_pin_set(EDGE_P12);  // D/C HIGH (data mode)
+  nrf_gpio_pin_set(EDGE_P16);  // CS HIGH
+  nrf_gpio_pin_set(EDGE_P12);  // D/C HIGH 
   nrf_gpio_pin_set(EDGE_P8);   // RESET HIGH
 }
 
@@ -65,13 +65,16 @@ void display_init(void) {
   spi_write_command(0xF7);  uint8_t f7[] = {0x20}; spi_write_data(f7, 1);
   spi_write_command(0xEA);  uint8_t ea[] = {0x00, 0x00}; spi_write_data(ea, 2);
   
-  spi_write_command(0xC0);  uint8_t c0[] = {0x23}; spi_write_data(c0, 1);  // Power Control 1
-  spi_write_command(0xC1);  uint8_t c1[] = {0x10}; spi_write_data(c1, 1);  // Power Control 2
-  spi_write_command(0xC5);  uint8_t c5[] = {0x3E, 0x28}; spi_write_data(c5, 2);  // VCOM Control 1
-  spi_write_command(0xC7);  uint8_t c7[] = {0x86}; spi_write_data(c7, 1);  // VCOM Control 2
+  // Power controls
+  spi_write_command(0xC0);  uint8_t c0[] = {0x23}; spi_write_data(c0, 1);  
+  spi_write_command(0xC1);  uint8_t c1[] = {0x10}; spi_write_data(c1, 1);  
+
+  // VCOM controls
+  spi_write_command(0xC5);  uint8_t c5[] = {0x3E, 0x28}; spi_write_data(c5, 2);  
+  spi_write_command(0xC7);  uint8_t c7[] = {0x86}; spi_write_data(c7, 1);  
 
   spi_write_command(0x36);  uint8_t madctl[] = {0x00}; spi_write_data(madctl, 1); // Memory Access Control
-  spi_write_command(0x3A);  uint8_t pixfmt[] = {0x55}; spi_write_data(pixfmt, 1); // Pixel Format = 16-bit RGB565
+  spi_write_command(0x3A);  uint8_t pixfmt[] = {0x55}; spi_write_data(pixfmt, 1); // Pixel Format
 
   spi_write_command(0xB1);  uint8_t frmctr1[] = {0x00, 0x18}; spi_write_data(frmctr1, 2);
   spi_write_command(0xB6);  uint8_t dfunctr[] = {0x08, 0x82, 0x27}; spi_write_data(dfunctr, 3);
@@ -133,14 +136,14 @@ void setAddrWindow(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
 }
 
 void fill_screen(uint16_t color) {
-  setAddrWindow(0, 0, 239, 319); // Full screen (assuming 240x320 display)
+  setAddrWindow(0, 0, 239, 319); // 240x320 display
   
   uint8_t data[2] = {color >> 8, color & 0xFF};
 
   printf("Filling screen with color: 0x%04X\n", color);
 
-  for (uint32_t i = 0; i < 240 * 320; i++) { // Total pixels
-      spi_write_data(data, 2);  // Send color
+  for (uint32_t i = 0; i < 240 * 320; i++) {
+      spi_write_data(data, 2);  
   }
 
   printf("Done filling screen\n");
@@ -181,28 +184,6 @@ void write_text(char c, uint16_t color, uint16_t background_color, uint16_t x1, 
     }
   }
 }
-
-// void write_word(const char *word, uint16_t text_color, uint16_t background_color, int top, int left) {
-//   // Letters are spaced 25 pixels apart on the x-axis (giving a 2-pixel gap).
-//   const int letter_width = 23;
-//   const int letter_height = 38;
-//   const int spacing = 25;
-  
-//   int x = left;             // current x position for the letter's left coordinate
-//   int bottom = top + letter_height; // bottom coordinate remains constant
-
-//   while (*word != '\0') {
-//       write_text(*word, text_color, background_color, top, x, bottom, x + letter_width);
-//       x += spacing;       // move to the next letter's starting position
-//       word++;             // move to the next character in the string
-//   }
-// }
-
-// void display_bradycardia(void) {
-//   uint16_t white = 0xFFFF;
-//   uint16_t black = 0x0000;
-//   write_word("BRADYCARDIA", white, black, 3, 0);
-// }
 
 void write_temp(int temp, int frac){
   int y1 = 150;
@@ -297,18 +278,6 @@ void write_initializing(void) {
   write_text('.', white, black, 0, 100, 38, 123);
   write_text('.', white, black, 0, 125, 38, 148);
 }
-
-// void clear_initializing(void) {
-//   uint16_t white = 0xFFFF;
-//   uint16_t black = 0x0000;
-//   write_text('I', black, black, 0, 0, 38, 23);
-//   write_text('N', black, black, 0, 25, 38, 48);
-//   write_text('I', black, black, 0, 50, 38, 73);
-//   write_text('T', black, black, 0, 75, 38, 98);
-//   write_text('.', black, black, 0, 100, 38, 123);
-//   write_text('.', black, black, 0, 125, 38, 148);
-//   write_text('.', black, black, 0, 150, 38, 173);
-// }
 
 void write_bpm(int bpm) {
   static int prev_digit_count = 0;  // Track previous number of digits

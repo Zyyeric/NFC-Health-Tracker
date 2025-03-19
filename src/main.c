@@ -30,6 +30,7 @@ int main(void) {
   // Different Colors
   uint16_t white = 0xFFFF;
   uint16_t black = 0x0000;
+
   // Fill the screen black
   fill_screen(black);
 
@@ -47,11 +48,12 @@ int main(void) {
   // // Initialize the MAX30102 sensor
   max30102_init(&twi_mngr_instance);
   printf("Temp Sensor initialized!\n");
+  
   // Initialize the ADC
   adc_init();
   printf("Pulse Sensor initialized!\n");
 
-  // Initalize Timer Module. 
+  // Initalize Timer Module 
   ret_code_t err_code = app_timer_init();
   APP_ERROR_CHECK(err_code);
   printf("Timer initialized!\n");
@@ -61,13 +63,7 @@ int main(void) {
 
   int index = 70;
   while (1) {
-    // display_bradycardia();
-    // printf("While looping\n");
-    // float curr_temp = max30102_read_temp();
-    // write_bpm(index);
-    // nrf_delay_us(100);
-    // index++;
-}
+  }
   
   return 0;
 }

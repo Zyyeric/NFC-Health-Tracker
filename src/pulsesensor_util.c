@@ -275,11 +275,3 @@ void sample_timer_callback(void * p_context)
         max30102_read_temp();
     }
 }
-    
-    // End measurement after the set window.
-    // if (elapsed_time_ms >= MEASUREMENT_WINDOW_MS)
-    // {
-    //     uint32_t final_bpm = calculate_bpm();
-    //     printf("Last BPM Sample: %lu\n", final_bpm);
-    //     stop_sample_timer();
-    // }
