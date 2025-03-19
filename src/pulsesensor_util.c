@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <display.h>
+#include "max30102.h"
 #include "app_timer.h"
 #include "nrf_delay.h"
 
@@ -11,7 +13,15 @@
 static float ma_buffer[MOVING_AVG_WINDOW];  
 static uint32_t ma_sample_count = 0;        
 static float ma_sum = 0.0f;                 
-static bool ma_filled = false;              
+static bool ma_filled = false;        
+static bool init_display = false;    
+
+// Moving BPM average 
+#define MOVING_AVG_BPM_WINDOW 5 
+static float bpm_buffer[MOVING_AVG_BPM_WINDOW];
+static uint32_t bpm_sample_count = 0;
+static float bpm_sum = 0.0f;
+static bool bpm_buffer_filled = false;
 
 // Display update interval
 #define DISPLAY_UPDATE_INTERVAL_MS 3000  
@@ -53,6 +63,7 @@ void start_sample_timer(void)
     
     err_code = app_timer_start(m_sample_timer, APP_TIMER_TICKS(SAMPLE_INTERVAL_MS), NULL);
     APP_ERROR_CHECK(err_code);
+    printf("end of start_sample_timer\n");
 }
 
 // Stop the sample timer.
@@ -112,10 +123,36 @@ void sample_timer_callback(void * p_context)
     
     // Skip processing during the stabilization period.
     if (elapsed_time_ms < STABILIZATION_TIME_MS)
-    {
+    {   
+        // printf("elapsed_time: %d\n", elapsed_time_ms);
+        // write_text('-', 0xFFFF, 0x0000, 0, 100, 38, 123);
+        // write_text('-', 0xFFFF, 0x0000, 0, 125, 38, 148);
         return;
     }
-    
+    else {
+        if(!init_display) {
+            uint16_t white = 0xFFFF;
+            uint16_t black = 0x0000;
+
+            // Write the BPM text
+            write_text('B', white, black, 0, 0, 38, 23);
+            write_text('P', white, black, 0, 25, 38, 48);
+            write_text('M', white, black, 0, 50, 38, 73);
+            write_text(':', white, black, 0, 75, 38, 98);
+            write_text('-', white, black, 0, 100, 38, 123);
+            write_text('-', white, black, 0, 125, 38, 148);
+
+            // Write the temp text
+            write_text('T', white, black, 48, 0, 86, 23);
+            write_text('E', white, black, 48, 25, 86, 48);
+            write_text('M', white, black, 48, 50, 86, 73);
+            write_text('P', white, black, 48, 75, 86, 98);
+            write_text(':', white, black, 48, 100, 86, 123);
+            write_text('-', white, black, 48, 125, 86, 148);
+            write_text('-', white, black, 48, 150, 86, 173);
+            init_display = true;
+        }
+    }
     // If no valid peak has been detected for a while, reset the sliding window.
     if ((elapsed_time_ms - last_peak_time) > NO_PEAK_TIMEOUT_MS)
     {
@@ -157,20 +194,92 @@ void sample_timer_callback(void * p_context)
         uint32_t current_bpm = calculate_bpm();
         if (current_bpm != 0)
         {
-            printf("Current BPM: %lu\n", current_bpm);
+            uint8_t bpm_index = bpm_sample_count % MOVING_AVG_BPM_WINDOW;
+            if (bpm_sample_count < MOVING_AVG_BPM_WINDOW)
+            {
+                bpm_sum += current_bpm;
+                bpm_buffer[bpm_index] = current_bpm; 
+                bpm_sample_count ++; 
+                if (bpm_sample_count >= MOVING_AVG_BPM_WINDOW) 
+                {
+                    bpm_buffer_filled = true; 
+                }
+            }
+            else {
+                bpm_sum = bpm_sum - bpm_buffer[bpm_index] + current_bpm; 
+                bpm_buffer[bpm_index] = current_bpm; 
+                bpm_sample_count ++; 
+            }
+            float filtered_bpm = (bpm_buffer_filled) ? (bpm_sum / MOVING_AVG_BPM_WINDOW) : (bpm_sum / bpm_sample_count); 
+            uint32_t bpm_to_int = (uint32_t) filtered_bpm;
+            printf("Current BPM: %lu\n", bpm_to_int);
+            write_bpm(bpm_to_int);
+            if (bpm_to_int < 60)
+            {
+                write_text('B', 0x00F8, 0x0000, 96, 0, 134, 23);
+                write_text('R', 0x00F8, 0x0000, 96, 25, 134, 48);
+                write_text('A', 0x00F8, 0x0000, 96, 50, 134, 73);
+                write_text('D', 0x00F8, 0x0000, 96, 75, 134, 98);
+                write_text('Y', 0x00F8, 0x0000, 96, 100, 134, 123);
+                write_text('C', 0x00F8, 0x0000, 96, 125, 134, 148);
+                write_text('A', 0x00F8, 0x0000, 96, 150, 134, 173);
+                write_text('R', 0x00F8, 0x0000, 96, 175, 134, 198);
+                write_text('D', 0x00F8, 0x0000, 96, 200, 134, 223);
+                write_text('I', 0x00F8, 0x0000, 96, 225, 134, 248);
+                write_text('A', 0x00F8, 0x0000, 96, 250, 134, 273);   
+            }
+           else if (bpm_to_int > 100) {
+                write_text('T', 0x00F8, 0x0000, 96, 0, 134, 23);
+                write_text('A', 0x00F8, 0x0000, 96, 25, 134, 48);
+                write_text('C', 0x00F8, 0x0000, 96, 50, 134, 73);
+                write_text('H', 0x00F8, 0x0000, 96, 75, 134, 98);
+                write_text('Y', 0x00F8, 0x0000, 96, 100, 134, 123);
+                write_text('C', 0x00F8, 0x0000, 96, 125, 134, 148);
+                write_text('A', 0x00F8, 0x0000, 96, 150, 134, 173);
+                write_text('R', 0x00F8, 0x0000, 96, 175, 134, 198);
+                write_text('D', 0x00F8, 0x0000, 96, 200, 134, 223);
+                write_text('I', 0x00F8, 0x0000, 96, 225, 134, 248);
+                write_text('A', 0x00F8, 0x0000, 96, 250, 134, 273);   
+            }
+            else {
+                write_text('R', 0x07E0, 0x0000, 96, 0, 134, 23);
+                write_text('E', 0x07E0, 0x0000, 96, 25, 134, 48);
+                write_text('G', 0x07E0, 0x0000, 96, 50, 134, 73);
+                write_text('U', 0x07E0, 0x0000, 96, 75, 134, 98);
+                write_text('L', 0x07E0, 0x0000, 96, 100, 134, 123);
+                write_text('A', 0x07E0, 0x0000, 96, 125, 134, 148);
+                write_text('R', 0x07E0, 0x0000, 96, 150, 134, 173);
+                write_text(' ', 0x07E0, 0x0000, 96, 175, 134, 198);
+                write_text('B', 0x07E0, 0x0000, 96, 200, 134, 223);
+                write_text('P', 0x07E0, 0x0000, 96, 225, 134, 248);
+                write_text('M', 0x07E0, 0x0000, 96, 250, 134, 273);  ;
+            }
         }
         else
         {
-            // Optionally indicate that no valid pulse is detected.
             printf("No valid pulse detected.\n");
+            write_text('-', 0xFFFF, 0x0000, 0, 100, 38, 123);
+            write_text('-', 0xFFFF, 0x0000, 0, 125, 38, 148);
+            write_text(' ', 0xFFFF, 0x0000, 96, 0, 134, 23);
+            write_text(' ', 0xFFFF, 0x0000, 96, 25, 134, 48);
+            write_text(' ', 0xFFFF, 0x0000, 96, 50, 134, 73);
+            write_text(' ', 0xFFFF, 0x0000, 96, 75, 134, 98);
+            write_text(' ', 0xFFFF, 0x0000, 96, 100, 134, 123);
+            write_text(' ', 0xFFFF, 0x0000, 96, 125, 134, 148);
+            write_text(' ', 0xFFFF, 0x0000, 96, 150, 134, 173);
+            write_text(' ', 0xFFFF, 0x0000, 96, 175, 134, 198);
+            write_text(' ', 0xFFFF, 0x0000, 96, 200, 134, 223);
+            write_text(' ', 0xFFFF, 0x0000, 96, 225, 134, 248);
+            write_text(' ', 0xFFFF, 0x0000, 96, 250, 134, 273);
         }
-    }
-    
-    // End measurement after the set window.
-    if (elapsed_time_ms >= MEASUREMENT_WINDOW_MS)
-    {
-        uint32_t final_bpm = calculate_bpm();
-        printf("Last BPM Sample: %lu\n", final_bpm);
-        stop_sample_timer();
+        max30102_read_temp();
     }
 }
+    
+    // End measurement after the set window.
+    // if (elapsed_time_ms >= MEASUREMENT_WINDOW_MS)
+    // {
+    //     uint32_t final_bpm = calculate_bpm();
+    //     printf("Last BPM Sample: %lu\n", final_bpm);
+    //     stop_sample_timer();
+    // }

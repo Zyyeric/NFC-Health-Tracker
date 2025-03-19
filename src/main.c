@@ -18,7 +18,7 @@
 #include <string.h>
 
 // Global I2C manager instance
-// NRF_TWI_MNGR_DEF(twi_mngr_instance, 1, 0);
+NRF_TWI_MNGR_DEF(twi_mngr_instance, 1, 0);
 
 int main(void) {
   printf("Board started!\n");
@@ -32,41 +32,41 @@ int main(void) {
   uint16_t black = 0x0000;
   // Fill the screen black
   fill_screen(black);
-  // Write Text
-  write_text('B', white, black, 0, 0, 38, 23);
-  write_text('P', white, black, 0, 25, 38, 48);
-  write_text('M', white, black, 0, 50, 38, 73);
-  write_text(':', white, black, 0, 75, 38, 98);
-  write_text('6', white, black, 0, 100, 38, 123);
-  write_text('5', white, black, 0, 125, 38, 148);
-  
+
+  write_initializing();
+
   // Initialize I2C and configure peripheral and driver
-  // nrf_drv_twi_config_t i2c_config = NRF_DRV_TWI_DEFAULT_CONFIG;
-  // i2c_config.scl = EDGE_P19;  
-  // i2c_config.sda = EDGE_P20;  
-  // i2c_config.frequency = NRF_TWIM_FREQ_100K;
-  // i2c_config.interrupt_priority = 0;
-  // nrf_twi_mngr_init(&twi_mngr_instance, &i2c_config);
-  // printf("I2C initialized!\n");
+  nrf_drv_twi_config_t i2c_config = NRF_DRV_TWI_DEFAULT_CONFIG;
+  i2c_config.scl = EDGE_P19;  
+  i2c_config.sda = EDGE_P20;  
+  i2c_config.frequency = NRF_TWIM_FREQ_100K;
+  i2c_config.interrupt_priority = 0;
+  nrf_twi_mngr_init(&twi_mngr_instance, &i2c_config);
+  printf("I2C initialized!\n");
 
   // // Initialize the MAX30102 sensor
-  // max30102_init(&twi_mngr_instance);
-  // printf("Temp Sensor initialized!\n");
+  max30102_init(&twi_mngr_instance);
+  printf("Temp Sensor initialized!\n");
   // Initialize the ADC
-  // adc_init();
-  // printf("Pulse Sensor initialized!\n");
+  adc_init();
+  printf("Pulse Sensor initialized!\n");
 
   // Initalize Timer Module. 
-  // ret_code_t err_code = app_timer_init();
-  // APP_ERROR_CHECK(err_code);
-  // printf("Timer initialized!\n");
+  ret_code_t err_code = app_timer_init();
+  APP_ERROR_CHECK(err_code);
+  printf("Timer initialized!\n");
 
-  // // Start pulse sensor sampling (2 ms interval)
-  // start_sample_timer();
+  // Start pulse sensor sampling (2 ms interval)
+  start_sample_timer();
 
+  int index = 70;
   while (1) {
-    // NRF_LOG_FLUSH();
-    // __WFE();  // Wait for event (low-power sleep)
+    // display_bradycardia();
+    // printf("While looping\n");
+    // float curr_temp = max30102_read_temp();
+    // write_bpm(index);
+    // nrf_delay_us(100);
+    // index++;
 }
   
   return 0;

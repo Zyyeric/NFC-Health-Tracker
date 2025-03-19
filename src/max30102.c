@@ -5,6 +5,7 @@
 #include <math.h>
 
 #include "max30102.h"
+#include "display.h"
 #include "nrf_delay.h"
 
 // Pointer to an initialized I2C instance to use for transactions
@@ -118,9 +119,8 @@ max30102_measurement_t max30102_read_sample(void) {
   return sample;
 }
 
-void max30102_read_temp(void) {
+float max30102_read_temp(void) {
   i2c_reg_write(MAX30102_ADDRESS, TEMP_CONFIG, 0x01);
-
   nrf_delay_ms(50);
 
   int8_t temp_int;
@@ -129,7 +129,10 @@ void max30102_read_temp(void) {
   i2c_reg_read(MAX30102_ADDRESS, TEMP_FRAC, 1, &temp_frac);
 
   float temp = (float)temp_int + (float)temp_frac * 0.0625;
+  
+  write_temp(temp_int, temp_frac);
 
   printf("Current Temperature: %.2f °C\n", temp);
+  return temp;
 }
 

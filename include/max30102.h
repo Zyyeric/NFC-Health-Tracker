@@ -45,5 +45,5 @@ uint8_t max30102_get_sample_count(void);
 
 max30102_measurement_t max30102_read_sample(void);
 
-void max30102_read_temp(void);
+float max30102_read_temp(void);
 

@@ -11,3 +11,10 @@ void spi_write_command(uint8_t cmd);
 void spi_write_data(uint8_t *data, size_t length);
 void fill_screen(uint16_t color);
 void write_text(char c, uint16_t color, uint16_t background, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
+void write_temp(int temp, int frac);
+void write_bpm(int bpm);
+void write_initializing(void);
+void clear_initializing(void);
+// void write_word(const char *word, uint16_t text_color, uint16_t background_color, int16_t top, int16_t left); 
+// void display_bradycardia(void);
+// void write_c

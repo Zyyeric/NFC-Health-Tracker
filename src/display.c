@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "nrf_delay.h"
 #include "nrfx_spim.h"
@@ -179,4 +180,165 @@ void write_text(char c, uint16_t color, uint16_t background_color, uint16_t x1, 
       mask = mask >> 1;
     }
   }
+}
+
+// void write_word(const char *word, uint16_t text_color, uint16_t background_color, int top, int left) {
+//   // Letters are spaced 25 pixels apart on the x-axis (giving a 2-pixel gap).
+//   const int letter_width = 23;
+//   const int letter_height = 38;
+//   const int spacing = 25;
+  
+//   int x = left;             // current x position for the letter's left coordinate
+//   int bottom = top + letter_height; // bottom coordinate remains constant
+
+//   while (*word != '\0') {
+//       write_text(*word, text_color, background_color, top, x, bottom, x + letter_width);
+//       x += spacing;       // move to the next letter's starting position
+//       word++;             // move to the next character in the string
+//   }
+// }
+
+// void display_bradycardia(void) {
+//   uint16_t white = 0xFFFF;
+//   uint16_t black = 0x0000;
+//   write_word("BRADYCARDIA", white, black, 3, 0);
+// }
+
+void write_temp(int temp, int frac){
+  int y1 = 150;
+  int y2 = 173;
+  uint16_t white = 0xFFFF;
+  uint16_t black = 0x0000;
+  int original_temp = temp;
+  int original_frac = frac;
+
+  while(temp != 0){
+    int curr = temp % 10;
+    int ascii = curr + 48;
+    write_text(ascii, white, black, 48, y1, 86, y2);
+    y1 -= 25;
+    y2 -= 25;
+    temp /= 10;
+  }
+
+  float fractional = (float) frac * 0.0625;
+  int fractional_int = (int) (fractional * 100);
+  
+  write_text(46, white, black, 48, 175, 86, 198);
+  
+  y1 = 225;
+  y2 = 248;
+  while(fractional_int != 0){
+    int curr = fractional_int % 10;
+    int ascii = curr + 48;
+    write_text(ascii, white, black, 48, y1, 86, y2);
+    y1 -= 25;
+    y2 -= 25;
+    fractional_int /= 10;
+  }
+
+  write_text(32, white, black, 48, 250, 86, 273);
+  write_text(67, white, black, 48, 275, 86, 298);
+
+  float real_temp = original_temp + original_frac * 0.0625;
+
+  if(real_temp < 28)
+  {
+    write_text('H', 0x00F8, 0x0000, 144, 0, 182, 23);
+    write_text('Y', 0x00F8, 0x0000, 144, 25, 182, 48);
+    write_text('P', 0x00F8, 0x0000, 144, 50, 182, 73);
+    write_text('O', 0x00F8, 0x0000, 144, 75, 182, 98);
+    write_text('T', 0x00F8, 0x0000, 144, 100, 182, 123);
+    write_text('H', 0x00F8, 0x0000, 144, 125, 182, 148);
+    write_text('E', 0x00F8, 0x0000, 144, 150, 182, 173);
+    write_text('R', 0x00F8, 0x0000, 144, 175, 182, 198);
+    write_text('M', 0x00F8, 0x0000, 144, 200, 182, 223);
+    write_text('I', 0x00F8, 0x0000, 144, 225, 182, 248);
+    write_text('A', 0x00F8, 0x0000, 144, 250, 182, 273); 
+  }
+  else if(real_temp > 34)
+  {
+    write_text('F', 0x00F8, 0x0000, 144, 0, 182, 23);
+    write_text('E', 0x00F8, 0x0000, 144, 25, 182, 48);
+    write_text('V', 0x00F8, 0x0000, 144, 50, 182, 73);
+    write_text('E', 0x00F8, 0x0000, 144, 75, 182, 98);
+    write_text('R', 0x00F8, 0x0000, 144, 100, 182, 123);
+    write_text(' ', 0x00F8, 0x0000, 144, 125, 182, 148);
+    write_text(' ', 0x00F8, 0x0000, 144, 150, 182, 173);
+    write_text(' ', 0x00F8, 0x0000, 144, 175, 182, 198);
+    write_text(' ', 0x00F8, 0x0000, 144, 200, 182, 223);
+    write_text(' ', 0x00F8, 0x0000, 144, 225, 182, 248);
+    write_text(' ', 0x00F8, 0x0000, 144, 250, 182, 273); 
+  }
+  else
+  {
+    write_text('N', 0x07E0, 0x0000, 144, 0, 182, 23);
+    write_text('O', 0x07E0, 0x0000, 144, 25, 182, 48);
+    write_text('R', 0x07E0, 0x0000, 144, 50, 182, 73);
+    write_text('M', 0x07E0, 0x0000, 144, 75, 182, 98);
+    write_text('A', 0x07E0, 0x0000, 144, 100, 182, 123);
+    write_text('L', 0x07E0, 0x0000, 144, 125, 182, 148);
+    write_text(' ', 0x07E0, 0x0000, 144, 150, 182, 173);
+    write_text('T', 0x07E0, 0x0000, 144, 175, 182, 198);
+    write_text('E', 0x07E0, 0x0000, 144, 200, 182, 223);
+    write_text('M', 0x07E0, 0x0000, 144, 225, 182, 248);
+    write_text('P', 0x07E0, 0x0000, 144, 250, 182, 273); 
+  }
+  
+}
+
+void write_initializing(void) {
+  uint16_t white = 0xFFFF;
+  uint16_t black = 0x0000;
+  write_text('I', white, black, 0, 0, 38, 23);
+  write_text('N', white, black, 0, 25, 38, 48);
+  write_text('I', white, black, 0, 50, 38, 73);
+  write_text('T', white, black, 0, 75, 38, 98);
+  write_text('.', white, black, 0, 100, 38, 123);
+  write_text('.', white, black, 0, 125, 38, 148);
+}
+
+// void clear_initializing(void) {
+//   uint16_t white = 0xFFFF;
+//   uint16_t black = 0x0000;
+//   write_text('I', black, black, 0, 0, 38, 23);
+//   write_text('N', black, black, 0, 25, 38, 48);
+//   write_text('I', black, black, 0, 50, 38, 73);
+//   write_text('T', black, black, 0, 75, 38, 98);
+//   write_text('.', black, black, 0, 100, 38, 123);
+//   write_text('.', black, black, 0, 125, 38, 148);
+//   write_text('.', black, black, 0, 150, 38, 173);
+// }
+
+void write_bpm(int bpm) {
+  static int prev_digit_count = 0;  // Track previous number of digits
+  char buffer[10];  // Buffer to store number as a string
+  sprintf(buffer, "%d", bpm);  // Convert number to string
+  int new_digit_count = strlen(buffer);  // Get the current digit count
+
+  printf("BPM as string: %s\n", buffer); // Debugging
+
+  // Display settings
+  uint16_t white = 0xFFFF;
+  uint16_t black = 0x0000;
+  uint16_t background = 0x0000; // Assuming black is the background
+  int y1 = 100;
+  int y2 = 123;
+
+  // Write the new number
+  for (int i = 0; i < new_digit_count; i++) {
+      write_text(buffer[i], white, black, 0, y1, 38, y2);
+      y1 += 25;
+      y2 += 25;
+  }
+
+  // Clear any extra digits from the previous number
+  for (int i = new_digit_count; i < prev_digit_count; i++) {
+      write_text(' ', background, background, 0, y1, 38, y2); // Overwrite with a space
+      y1 += 25;
+      y2 += 25;
+  }
+
+  // Update previous digit count
+  prev_digit_count = new_digit_count;
 }
