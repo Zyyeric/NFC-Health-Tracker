@@ -1,5 +1,4 @@
 // MAX30102 driver for Microbit_v2
-
 #include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
@@ -68,10 +67,10 @@ void i2c_reg_write(uint8_t i2c_addr, uint8_t reg_addr, uint8_t data) {
 void max30102_init(const nrf_twi_mngr_t* i2c) {
   i2c_manager = i2c;
 
+  // Read the Who Am I register
   uint8_t data;
   i2c_reg_read(MAX30102_ADDRESS, PART_ID, 1, &data);
   printf("WHO_AM_I_A: 0x%X\n", data);
-  // printf("WHO_AM_I_A: 0x%X\n", i2c_reg_read(0x48, 0x02));
 
   // Reset the FIFO to default values
   i2c_reg_write(MAX30102_ADDRESS, FIFO_WR_PTR, 0x00);
@@ -84,9 +83,6 @@ void max30102_init(const nrf_twi_mngr_t* i2c) {
   // Configure Mode settings
   i2c_reg_write(MAX30102_ADDRESS, MODE_CONFIG, 0x02);
   
-  // Configure SpO₂ settings
-  // i2c_reg_write(MAX30102_ADDRESS, SPO2_CONFIG, 0x27); 
-  
   // Set LED pulse amplitudes
   i2c_reg_write(MAX30102_ADDRESS, LED1_RED_PULSE_AMP, 0x24); 
   i2c_reg_write(MAX30102_ADDRESS, LED2_IR_PULSE_AMP, 0x24); 
@@ -96,22 +92,28 @@ void max30102_init(const nrf_twi_mngr_t* i2c) {
 
 // Returns the number of samples available in the FIFO
 uint8_t max30102_get_sample_count(void) {
+  // Read the write pointer
   uint8_t wr_ptr;
   i2c_reg_read(MAX30102_ADDRESS, FIFO_WR_PTR, 1, &wr_ptr);
   printf("Write pointer: %d\n", wr_ptr);
+
+  // Read the read pointer
   uint8_t rd_ptr;
   i2c_reg_read(MAX30102_ADDRESS, FIFO_RD_PTR, 1, &rd_ptr);
   printf("Read pointer: %d\n", rd_ptr);
+  
+  // Calculate the difference
   uint8_t sample_count = (wr_ptr >= rd_ptr) ? (wr_ptr - rd_ptr) : (wr_ptr + 32 - rd_ptr);
   return sample_count;
 }
 
 // Read one sample from the FIFO
 max30102_measurement_t max30102_read_sample(void) {
+  // Read from the FIFO 
   uint8_t data[6];
   i2c_reg_read(MAX30102_ADDRESS, FIFO_DATA, 6, data);
   
-  // Since data is left-justified, need to shift right at the end
+  // Since the data is left-justified, we need to shift right
   max30102_measurement_t sample;
   sample.red = (((uint32_t)data[0] << 16) | ((uint32_t)data[1] << 8) | data[2]) >> 6;
   sample.ir  = (((uint32_t)data[3] << 16) | ((uint32_t)data[4] << 8) | data[5]) >> 6;
@@ -119,17 +121,21 @@ max30102_measurement_t max30102_read_sample(void) {
   return sample;
 }
 
+// Read the temperature
 float max30102_read_temp(void) {
+  // Temperature configuration
   i2c_reg_write(MAX30102_ADDRESS, TEMP_CONFIG, 0x01);
   nrf_delay_ms(50);
 
+  // Read the digit part of the temperature
   int8_t temp_int;
   i2c_reg_read(MAX30102_ADDRESS, TEMP_INT, 1, &temp_int);
+  // Read the fractional part of the temperature
   uint8_t temp_frac;
   i2c_reg_read(MAX30102_ADDRESS, TEMP_FRAC, 1, &temp_frac);
-
+  // Calculate the overall temperature
   float temp = (float)temp_int + (float)temp_frac * 0.0625;
-  
+  // Write it to the display
   write_temp(temp_int, temp_frac);
 
   printf("Current Temperature: %.2f °C\n", temp);

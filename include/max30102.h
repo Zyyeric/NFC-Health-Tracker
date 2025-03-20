@@ -1,7 +1,6 @@
 // MAX30102 Heart Rate and Blood Oxygen Sensor
 
 #pragma once
-
 #include "nrf_twi_mngr.h"
 
 // MAX30102 chip address 

@@ -33,7 +33,7 @@ int main(void) {
 
   // Fill the screen black
   fill_screen(black);
-
+  // Write initializing to the screen
   write_initializing();
 
   // Initialize I2C and configure peripheral and driver
@@ -61,7 +61,6 @@ int main(void) {
   // Start pulse sensor sampling (2 ms interval)
   start_sample_timer();
 
-  int index = 70;
   while (1) {
   }
   

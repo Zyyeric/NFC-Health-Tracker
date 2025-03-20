@@ -9,7 +9,7 @@
 #include "nrf_delay.h"
 
 // Moving average filter settings
-#define MOVING_AVG_WINDOW 10    // Use a larger window for better smoothing
+#define MOVING_AVG_WINDOW 10   
 static float ma_buffer[MOVING_AVG_WINDOW];  
 static uint32_t ma_sample_count = 0;        
 static float ma_sum = 0.0f;                 
@@ -27,12 +27,12 @@ static bool bpm_buffer_filled = false;
 #define DISPLAY_UPDATE_INTERVAL_MS 3000  
 static uint32_t last_display_update = 0;
 
-// Peak detection thresholds with hysteresis
+// Peak detection thresholds
 #define PEAK_THRESHOLD        2350.0f   // Must exceed to count as a peak
 #define LOWER_THRESHOLD       2000.0f   // Must fall below before detecting a new peak
-#define MIN_PEAK_INTERVAL_MS  650       // Refractory period for valid peaks
+#define MIN_PEAK_INTERVAL_MS  650       // Time between valid peaks
 
-// Sliding window for peak timestamps (only the most recent peaks are used)
+// Sliding window for recent peak timestamps
 #define SLIDING_WINDOW_SIZE 5
 static uint32_t peak_timestamps[SLIDING_WINDOW_SIZE];
 static uint8_t  peak_count = 0;
@@ -47,9 +47,9 @@ APP_TIMER_DEF(m_sample_timer);
 #define SAMPLE_INTERVAL_MS   2
 #define APP_TIMER_TICKS_MS(x) APP_TIMER_TICKS(x)
 static volatile uint32_t elapsed_time_ms = 0;
-#define MEASUREMENT_WINDOW_MS  30000  // 30-second measurement window
+#define MEASUREMENT_WINDOW_MS  30000 
 
-// Stabilization period: ignore data for the first 5 seconds
+// Stabilization period where data is ignored for the first 5 seconds
 #define STABILIZATION_TIME_MS  5000
 
 // Start the sample timer.
@@ -124,9 +124,6 @@ void sample_timer_callback(void * p_context)
     // Skip processing during the stabilization period.
     if (elapsed_time_ms < STABILIZATION_TIME_MS)
     {   
-        // printf("elapsed_time: %d\n", elapsed_time_ms);
-        // write_text('-', 0xFFFF, 0x0000, 0, 100, 38, 123);
-        // write_text('-', 0xFFFF, 0x0000, 0, 125, 38, 148);
         return;
     }
     else {
@@ -159,7 +156,7 @@ void sample_timer_callback(void * p_context)
         peak_count = 0;  // Reset the window
     }
     
-    // Peak Detection with hysteresis.
+    // Peak Detection
     if (!peak_detected &&
         (filtered_sample > PEAK_THRESHOLD) &&
         ((elapsed_time_ms - last_peak_time) >= MIN_PEAK_INTERVAL_MS))
@@ -214,6 +211,8 @@ void sample_timer_callback(void * p_context)
             uint32_t bpm_to_int = (uint32_t) filtered_bpm;
             printf("Current BPM: %lu\n", bpm_to_int);
             write_bpm(bpm_to_int);
+            
+            // Write the correct diagnosis to the display
             if (bpm_to_int < 60)
             {
                 write_text('B', 0x00F8, 0x0000, 96, 0, 134, 23);
@@ -272,6 +271,8 @@ void sample_timer_callback(void * p_context)
             write_text(' ', 0xFFFF, 0x0000, 96, 225, 134, 248);
             write_text(' ', 0xFFFF, 0x0000, 96, 250, 134, 273);
         }
+
+        // Read the temperature
         max30102_read_temp();
     }
 }
