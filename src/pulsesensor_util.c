@@ -98,7 +98,7 @@ void sample_timer_callback(void * p_context)
     // Read a raw ADC sample.
     float raw_sample = adc_sample_blocking();  // ADC counts (0-4095)
 
-    // Apply a moving-average filter.
+    // Apply a moving-average filter. 
     uint8_t index = (uint8_t)(ma_sample_count % MOVING_AVG_WINDOW);
     if (ma_sample_count < MOVING_AVG_WINDOW)
     {
@@ -156,7 +156,8 @@ void sample_timer_callback(void * p_context)
         peak_count = 0;  // Reset the window
     }
     
-    // Peak Detection
+    // Peak Detection 
+    // Only detect peaks if the sample is above the threshold and the peak interval has passed.
     if (!peak_detected &&
         (filtered_sample > PEAK_THRESHOLD) &&
         ((elapsed_time_ms - last_peak_time) >= MIN_PEAK_INTERVAL_MS))
@@ -180,8 +181,7 @@ void sample_timer_callback(void * p_context)
     }
     else if (peak_detected && (filtered_sample < LOWER_THRESHOLD))
     {
-        // Allow detection of the next peak.
-        peak_detected = false;
+        peak_detected = false; // Falling edge detected
     }
     
     // Update display at fixed intervals.
@@ -190,7 +190,8 @@ void sample_timer_callback(void * p_context)
         last_display_update = elapsed_time_ms;
         uint32_t current_bpm = calculate_bpm();
         if (current_bpm != 0)
-        {
+        {   
+            // Update the BPM moving average. 
             uint8_t bpm_index = bpm_sample_count % MOVING_AVG_BPM_WINDOW;
             if (bpm_sample_count < MOVING_AVG_BPM_WINDOW)
             {
@@ -210,6 +211,7 @@ void sample_timer_callback(void * p_context)
             float filtered_bpm = (bpm_buffer_filled) ? (bpm_sum / MOVING_AVG_BPM_WINDOW) : (bpm_sum / bpm_sample_count); 
             uint32_t bpm_to_int = (uint32_t) filtered_bpm;
             printf("Current BPM: %lu\n", bpm_to_int);
+            // Display the BPM 
             write_bpm(bpm_to_int);
             
             // Write the correct diagnosis to the display

@@ -1,4 +1,4 @@
-// Pulse Sensor BPM Functions
+// Pulse Sensor's Timer and BPM Functions
 
 #include "app_timer.h"
 #pragma once

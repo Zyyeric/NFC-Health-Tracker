@@ -45,7 +45,7 @@ int main(void) {
   nrf_twi_mngr_init(&twi_mngr_instance, &i2c_config);
   printf("I2C initialized!\n");
 
-  // // Initialize the MAX30102 sensor
+  // Initialize the MAX30102 sensor
   max30102_init(&twi_mngr_instance);
   printf("Temp Sensor initialized!\n");
   
